@@ -1,42 +1,45 @@
 from fastapi import APIRouter, HTTPException, Request
-from controllers.orderController import createPosition
 import ccxt
 from funcitons.create_order import order
-
 from funcitons.exchange import exchange
 from funcitons.setLeverage import setLeverage
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("/order")
 async def createPosition(request:Request):
     try:
         result = await request.json()
-        apiKey = result["apiKey"]
-        secretKey = result["secretKey"]
-        symbol = result["symbol"]
-        amount = result["amount"]
-        leverage = result["leverage"]
-        position = result["position"]
 
-        exchanges = exchange(apiKey, secretKey)
-        setLeverage(symbol, leverage, exchanges)
+        orders = []
 
-        ticker = exchanges.fetch_ticker(symbol)
-        lastPrice = ticker['last']
-        totalPrice = (amount / lastPrice) * leverage
+        for item in result:
+            # ดึงข้อมูลจากแต่ละรายการ JSON
+            symbol = item["symbol"]
+            leverage = item["leverage"]
+            amount = item["amount"]
+            apiKey = item["Users"]["key"][0]["apiKey"]
+            secretKey = item["Users"]["key"][0]["secretKey"]
+            position = item["position"]
 
-        orderSet = {
-            'symbol': symbol,
-            'totalPrice':totalPrice,
-            'lastPrice':lastPrice,
-            'position':position
-        }
+            exchanges = exchange(apiKey, secretKey)
+            setLeverage(symbol, leverage, exchanges)
 
-        createOrder = order(orderSet,exchanges)
+            ticker = exchanges.fetch_ticker(symbol)
+            lastPrice = ticker['last']
+            totalPrice = (amount / lastPrice) * leverage
+            orderSet = {
+                'symbol': symbol,
+                'totalPrice':totalPrice,
+                'lastPrice':lastPrice,
+                'position':position
+            }
 
-        return createOrder
-    
+            createOrder = order(orderSet,exchanges)
+
+            orders.append(createOrder)
+
+        return orders
 
     except Exception as e:
         # Handle the exception here

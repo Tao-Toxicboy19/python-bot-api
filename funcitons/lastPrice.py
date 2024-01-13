@@ -1,5 +1,3 @@
-import ccxt
-
 def lastPrice(symbol,exchange):
     try:
         ticker = exchange.fetch_ticker(symbol)

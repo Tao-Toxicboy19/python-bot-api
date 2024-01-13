@@ -10,12 +10,7 @@ def exchange(apiKey, secretKey):
                 'defaultType': 'future',
             }
         })
-
-        # exchange = {  
-        #     "apiKey":apiKey,
-        #     "secretKey":secretKey
-        #     }
-          
+                  
         return exchange
     except Exception as e:
         # Handle the exception here
