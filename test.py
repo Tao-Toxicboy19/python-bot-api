@@ -18,6 +18,9 @@ try:
         "symbol": "ETHUSDT",
         "leverage":10
     })
+    # close = exchange.create_market_buy_order(symbol,totalPrice,lastPrice,params={
+    #     'positionSide': position
+    # })
 
     print(response)
 
