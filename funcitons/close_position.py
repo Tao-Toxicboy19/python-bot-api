@@ -5,10 +5,7 @@ def closePositions(exchanges,setPositions):
     try: 
         symbol = setPositions['symbol']
         totalPrice = setPositions['totalPrice']
-        lastPrice = setPositions['lastPrice']
-        position = setPositions['position']
         status = setPositions['status']
-        print(status)
         
         if(status == 'SHORT'):
             close = exchanges.create_market_buy_order(symbol, totalPrice, params={
