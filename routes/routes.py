@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Request
 import ccxt
+from typing import List
 from funcitons.calulate_ema import calculateEMA, fetchOkexData
 from funcitons.close_position import closePositions
 from funcitons.create_order import order
 from funcitons.exchange import exchange
 from funcitons.setLeverage import setLeverage
-from typing import List
 
 router = APIRouter()
 
@@ -18,11 +18,11 @@ async def createPosition(request:Request):
 
         for item in result:
             # ดึงข้อมูลจากแต่ละรายการ JSON
-            symbol = item["symbol"]
+            symbol = item["symbolsName"]
             leverage = item["leverage"]
             amount = item["amount"]
-            apiKey = item["Users"]["key"][0]["apiKey"]
-            secretKey = item["Users"]["key"][0]["secretKey"]
+            apiKey = item["apiKey"]
+            secretKey = item["secretKey"]
             position = item["position"]
 
             exchanges = exchange(apiKey, secretKey)
@@ -57,12 +57,17 @@ async def wallet_balance():
 async def calculate(request: Request):
     try:
         result = await request.json()
-
         limit = 30
         symbols = result["symbols"]
-        tf = result["tf"][0]
-        value = tf["value"]
-        timeFrame = tf["timeFrame"]
+        tf = result["tf"]
+        value = tf[0]["value"]
+        timeFrame = tf[0]["timeFrame"]
+
+        # print(symbols)
+        # print(result)
+        # print(timeFrame)
+        # print(value)
+        # print(tf[0])
 
         since = ccxt.binance().milliseconds() - value
 
@@ -77,16 +82,17 @@ async def calculate(request: Request):
             latestOpenPrices = latest_two_entries["close"].tolist()
             latestOpenEma = latest_two_entries["ema"].tolist()
 
-            latestOpenPrice_2 = latestOpenPrices[-2]
-            latestOpenPrice_3 = latestOpenPrices[-3]
-            latestOpenEma_2 = latestOpenEma[-2]
-            latestOpenEma_3 = latestOpenEma[-3]
 
-            if latestOpenEma_3 >= latestOpenPrice_3:
-                if latestOpenEma_2 <= latestOpenPrice_2:
+            latestOpenPrice_1 = latestOpenPrices[-1]
+            latestOpenPrice_2 = latestOpenPrices[-2]
+            latestOpenEma_1 = latestOpenEma[-1]
+            latestOpenEma_2 = latestOpenEma[-2]
+
+            if latestOpenEma_2 >= latestOpenPrice_2:
+                if latestOpenEma_1 <= latestOpenPrice_1:
                     coinsValue.append({"symbol": symbol, "timeframe": timeFrame, "position": "LONG"})
-            if latestOpenEma_3 <= latestOpenPrice_3:
-                if latestOpenEma_2 >= latestOpenPrice_2:
+            if latestOpenEma_2 <= latestOpenPrice_2:
+                if latestOpenEma_1 >= latestOpenPrice_1:
                     coinsValue.append({"symbol": symbol, "timeframe": timeFrame, "position": "SHORT"})
 
         return coinsValue
@@ -101,18 +107,15 @@ async def closeOrder(request: Request):
         result = await request.json()
         
         closed = []
+        print(result)
 
         for item in result:
-            apiKey = item["Users"]["key"][0]["apiKey"]
-            secretKey = item["Users"]["key"][0]["secretKey"]
-            symbol = item['symbol']
+            apiKey = item["apiKey"]
+            secretKey = item["secretKey"]
+            symbol = item['symbolsName']
             amount = item['amount']
             leverage = item['leverage']
             status = item['status']
-            position = item['position']
-
-            if(status == position):
-                return
             
             exchanges = exchange(apiKey, secretKey)
             setLeverage(symbol,leverage,exchanges)
@@ -126,7 +129,6 @@ async def closeOrder(request: Request):
                 'totalPrice': totalPrice,
                 'lastPrice': lastPrice,
                 'status': status,
-                'position':position
             }
 
             closeOrder = closePositions(exchanges, setPositions)
