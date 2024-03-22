@@ -10,5 +10,5 @@ def fetchOkexData(symbol, timeframe, since, limit):
     df.set_index('timestamp', inplace=True)
     return df
 
-def calculateEMA(df, span=15):
+def calculateEMA(df, span):
     df['ema'] = df['close'].ewm(span=span, adjust=False).mean()

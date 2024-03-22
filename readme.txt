@@ -4,7 +4,7 @@
 4 h = 432000000
 1 d = 2592000000
 
-
+source env/bin/activate
 
 
 timeframes = [

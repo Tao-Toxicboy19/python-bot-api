@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
 import ccxt
-from typing import List
 from funcitons.calulate_ema import calculateEMA, fetchOkexData
 from funcitons.close_position import closePositions
 from funcitons.create_order import order
@@ -18,7 +17,7 @@ async def createPosition(request:Request):
 
         for item in result:
             # ดึงข้อมูลจากแต่ละรายการ JSON
-            symbol = item["symbolsName"]
+            symbol = item["symbols"]
             leverage = item["leverage"]
             amount = item["amount"]
             apiKey = item["apiKey"]
@@ -49,39 +48,30 @@ async def createPosition(request:Request):
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-@router.post("/wallet")
-async def wallet_balance():
-    return wallet_balance()
-
 @router.post("/calulate/ema")
 async def calculate(request: Request):
     try:
         result = await request.json()
-        limit = 30
         symbols = result["symbols"]
         tf = result["tf"]
         value = tf[0]["value"]
         timeFrame = tf[0]["timeFrame"]
 
-        # print(symbols)
-        # print(result)
-        # print(timeFrame)
-        # print(value)
-        # print(tf[0])
-
         since = ccxt.binance().milliseconds() - value
-
         coinsValue = []
 
         for i in symbols:
-            symbol = i["name"]
+            symbol = i["symbol"]
+            ema = i.get("ema")
+            if ema is None:
+                ema = 15
+            limit = ema * 2
             symbol_data = fetchOkexData(symbol, timeFrame, since, limit)
-            calculateEMA(symbol_data)
+            calculateEMA(symbol_data, ema)
             latest_two_entries = symbol_data.iloc[-3:]
 
             latestOpenPrices = latest_two_entries["close"].tolist()
             latestOpenEma = latest_two_entries["ema"].tolist()
-
 
             latestOpenPrice_1 = latestOpenPrices[-1]
             latestOpenPrice_2 = latestOpenPrices[-2]
@@ -112,7 +102,7 @@ async def closeOrder(request: Request):
         for item in result:
             apiKey = item["apiKey"]
             secretKey = item["secretKey"]
-            symbol = item['symbolsName']
+            symbol = item['symbols']
             amount = item['amount']
             leverage = item['leverage']
             status = item['status']
