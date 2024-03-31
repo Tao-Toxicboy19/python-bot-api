@@ -8,46 +8,6 @@ from funcitons.setLeverage import setLeverage
 
 router = APIRouter()
 
-@router.post("/open/order")
-async def createPosition(request:Request):
-    try:
-        result = await request.json()
-
-        orders = []
-
-        for item in result:
-            # ดึงข้อมูลจากแต่ละรายการ JSON
-            symbol = item["symbols"]
-            leverage = item["leverage"]
-            amount = item["amount"]
-            apiKey = item["apiKey"]
-            secretKey = item["secretKey"]
-            position = item["position"]
-
-            exchanges = exchange(apiKey, secretKey)
-            setLeverage(symbol, leverage, exchanges)
-
-            ticker = exchanges.fetch_ticker(symbol)
-            lastPrice = ticker['last']
-            totalPrice = (amount / lastPrice) * leverage
-            orderSet = {
-                'symbol': symbol,
-                'totalPrice':totalPrice,
-                'lastPrice':lastPrice,
-                'position':position
-            }
-
-            createOrder = order(orderSet,exchanges)
-
-            orders.append(createOrder)
-
-        return orders
-
-    except Exception as e:
-        # Handle the exception here
-        print(f"An error occurred: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
 @router.post("/calulate/ema")
 async def calculate(request: Request):
     try:
@@ -90,44 +50,3 @@ async def calculate(request: Request):
     except Exception as e:
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
-
-@router.post("/close/order")
-async def closeOrder(request: Request):
-    try:
-        result = await request.json()
-        
-        closed = []
-        print(result)
-
-        for item in result:
-            apiKey = item["apiKey"]
-            secretKey = item["secretKey"]
-            symbol = item['symbols']
-            amount = item['amount']
-            leverage = item['leverage']
-            status = item['status']
-            
-            exchanges = exchange(apiKey, secretKey)
-            setLeverage(symbol,leverage,exchanges)
-    
-            ticker = exchanges.fetch_ticker(symbol)
-            lastPrice = ticker['last']
-            totalPrice = (amount / lastPrice) * leverage
-        
-            setPositions = {
-                'symbol': symbol,
-                'totalPrice': totalPrice,
-                'lastPrice': lastPrice,
-                'status': status,
-            }
-
-            closeOrder = closePositions(exchanges, setPositions)
-            closed.append(closeOrder)
-            
-        return closed 
-     
-    except Exception as e:
-        # Handle the exception here
-        print(f"An error occurred: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-        
